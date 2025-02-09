@@ -38,6 +38,15 @@ contract Factory {
         return tokenToSale[tokens[_index]];
     }
 
+    function getCost(uint256 _sold) public pure returns (uint256) {
+        uint256 floor = 0.0001 ether;
+        uint256 step = 0.0001 ether;
+        uint256 increment = 10000 ether;
+
+        uint256 cost = (step * (_sold / increment)) + floor;
+        return cost;
+    }
+
     function create(
         string memory _name,
         string memory _symbol
@@ -90,12 +99,23 @@ contract Factory {
         emit Buy(_token, _amount);
     }
 
-    function getCost(uint256 _sold) public pure returns (uint256) {
-        uint256 floor = 0.0001 ether;
-        uint256 step = 0.0001 ether;
-        uint256 increment = 10000 ether;
+     function deposit(address _token) external {
+        // The remaining token balance and the ETH raised
+        // would go into a liquidity pool like Uniswap V3.
+        // For simplicity we'll just transfer remaining
+        // tokens and ETH raised to the creator.
 
-        uint256 cost = (step * (_sold / increment)) + floor;
-        return cost;
+        Token token = Token(_token);
+        TokenSale memory sale = tokenToSale[_token];
+
+        require(sale.isOpen == false, "Factory: Target not reached");
+
+        // Transfer tokens
+        token.transfer(sale.creator, token.balanceOf(address(this)));
+
+        // Transfer ETH raised
+        (bool success, ) = payable(sale.creator).call{value: sale.raised}("");
+        require(success, "Factory: ETH transfer failed");
     }
+    
 }
