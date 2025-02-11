@@ -47,10 +47,7 @@ contract Factory {
         return cost;
     }
 
-    function create(
-        string memory _name,
-        string memory _symbol
-    ) external payable {
+    function create(string memory _name,string memory _symbol) external payable {
         require(msg.value >= fee, "Factory: Creator fee not met");
 
         Token token = new Token(msg.sender, _name, _symbol, 1_000_000 ether);
