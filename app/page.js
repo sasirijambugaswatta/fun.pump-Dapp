@@ -20,6 +20,7 @@ export default function Home() {
   const [account, setAccount] = useState(null);
   const [factory, setFactory] = useState(null);
   const [fee, setFee] = useState(0);
+  const [token, setToken] = useState(null)
   const [showCreate, setShowCreate] = useState(false)
 
   async function loadBlockchainData() {
@@ -36,6 +37,32 @@ export default function Home() {
     // Fetch the fee
     const fee = await factory.fee();
     setFee(fee);
+
+    const totalTokens = await factory.totalTokens()
+    const tokens = []
+
+    // We'll get the first 6 tokens listed
+    for (let i = 0; i < totalTokens; i++) {
+      if (i == 6) {
+        break
+      }
+
+      const tokenSale = await factory.getTokenSale(i)
+
+      // We create our own object to store extra fields
+      // like images
+      const token = {
+        token: tokenSale.token,
+        name: tokenSale.name,
+        creator: tokenSale.creator,
+        sold: tokenSale.sold,
+        raised: tokenSale.raised,
+        isOpen: tokenSale.isOpen,
+        image: images[i]
+      }
+
+      tokens.push(token)
+      setTokens(tokens.reverse())
   }
 
   function toggleCreate() {
@@ -62,6 +89,26 @@ export default function Home() {
               "[ start a new token ]"
             )}
           </button>
+        </div>
+
+        <div className="listings">
+          <h1>new listings</h1>
+
+          <div className="tokens">
+            {!account ? (
+              <p>please connect wallet</p>
+            ) : tokens.length === 0 ? (
+              <p>No tokens listed</p>
+            ) : (
+              tokens.map((token, index) => (
+                <Token
+                  toggleTrade={toggleTrade}
+                  token={token}
+                  key={index}
+                />
+              ))
+            )}
+          </div>
         </div>
 
         {showCreate && (
