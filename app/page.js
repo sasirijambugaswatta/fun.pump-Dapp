@@ -15,28 +15,42 @@ import config from "./config.json"
 import images from "./images.json"
 
 export default function Home() {
-
   const [provider, setProvider] = useState(null);
   const [account, setAccount] = useState(null);
   const [factory, setFactory] = useState(null);
   const [fee, setFee] = useState(0);
-  const [token, setToken] = useState(null)
-  const [showCreate, setShowCreate] = useState(false)
+  const [tokens, setTokens] = useState([]);
+  const [token, setToken] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showTrade, setShowTrade] = useState(false);
+
+  function toggleCreate() {
+    showCreate ? setShowCreate(false) : setShowCreate(true)
+  }
+
+  function toggleTrade(token) {
+    setToken(token)
+    showTrade ? setShowTrade(false) : setShowTrade(true)
+  }
 
   async function loadBlockchainData() {
     // Use MetaMask for our connection
     const provider = new ethers.BrowserProvider(window.ethereum)
     setProvider(provider)
+
     // Get the current network
     const network = await provider.getNetwork();
-
+    console.log(network.chainId);
+    // console.log(config[network.chainId].factory.address);
+    
     // Create reference to Factory contract
-    const factory = new ethers.Contract(config[network.chainId].factory.address, Factory, provider)
-    setFactory(factory);
+    const factory = new ethers.Contract(config["31337"].factory.address, Factory, provider)
+    setFactory(factory)
 
-    // Fetch the fee
     const fee = await factory.fee();
-    setFee(fee);
+    console.log("fee",fee);
+    
+    setFee(fee)
 
     const totalTokens = await factory.totalTokens()
     const tokens = []
@@ -62,25 +76,24 @@ export default function Home() {
       }
 
       tokens.push(token)
-      setTokens(tokens.reverse())
-  }
+    }
 
-  function toggleCreate() {
-    showCreate ? setShowCreate(false) : setShowCreate(true)
+    // We reverse the array so we can get the most
+    // recent token listed to display first
+    setTokens(tokens.reverse())
   }
 
   useEffect(() => {
-    loadBlockchainData()
-  }, [])
+    loadBlockchainData();
+  }, [showCreate, showTrade])
 
   return (
     <div className="page">
-
       <Header account={account} setAccount={setAccount} />
 
       <main>
         <div className="create">
-        <button onClick={factory && account && toggleCreate} className="btn--fancy">
+          <button onClick={factory && account && toggleCreate} className="btn--fancy">
             {!factory ? (
               "[ contract not deployed ]"
             ) : !account ? (
@@ -115,8 +128,10 @@ export default function Home() {
           <List toggleCreate={toggleCreate} fee={fee} provider={provider} factory={factory} />
         )}
 
+        {showTrade && (
+          <Trade toggleTrade={toggleTrade} token={token} provider={provider} factory={factory} />
+        )}
       </main>
-
     </div>
   );
 }
